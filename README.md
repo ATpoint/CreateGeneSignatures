@@ -68,7 +68,7 @@ pheatmap(mat=t(scale(t(logcpm[signatures$NK,]))), show_rownames=FALSE)
 
 A heatmap of the combined signatures genes:
 
-(Heatmap)[https://i.ibb.co/9VxkTwh/heatmap.jpg]
+[Heatmap](https://i.ibb.co/9VxkTwh/heatmap.jpg)
 
 The signatures represent those combination of genes that best separate each of the individual celltypes from all other celltypes. 
 In the above example the parameters were very strict, with `min.prop=1` requiring that signature genes ranked highly in every of the initial pairwise conparisons.

@@ -12,7 +12,7 @@ RankDEGs(
   effect.column = "logFC",
   effect.threshold = 0,
   gene.column = "Gene",
-  rnk.method = c("signif", "effect", "combination")
+  rnk.method = c("signif", "effect", "combi")
 )
 }
 \arguments{

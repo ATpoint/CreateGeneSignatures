@@ -60,7 +60,7 @@
 RankDEGs <- function(res, delim="_vs_", 
                      signif.column="FDR", signif.threshold=0.05,
                      effect.column="logFC", effect.threshold=0,
-                     gene.column="Gene", rnk.method=c("signif", "effect", "combination")){
+                     gene.column="Gene", rnk.method=c("signif", "effect", "combi")){
   
   ####################################
   # Checks

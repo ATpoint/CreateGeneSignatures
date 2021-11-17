@@ -56,7 +56,15 @@ lapply(signatures,length)
 # Inspect the signature genes using heatmaps, using the scaled CPMs on the log scale:
 library(pheatmap)
 logcpm <- log2(edgeR::cpm(y,log=FALSE)+1)
-pheatmap(mat=t(scale(t(logcpm[unique(unlist(signatures)),]))), show_rownames=FALSE, cluster_rows = FALSE)
+
+# plot a heatmap in the colorder of names(signatures)
+col_order <- unlist(lapply(names(signatures), 
+                           function(x) grep(paste0("^", x), colnames(logcpm))))
+                            
+# use scaled logCPMs                           
+logcpmZ <- t(scale(t(logcpm[unique(unlist(signatures)),])))
+pheatmap(mat=logcpmZ[,col_order],
+         show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
 
 # Alternatively check every signature separately:
 pheatmap(mat=t(scale(t(logcpm[signatures$CD4T,]))), show_rownames=FALSE)

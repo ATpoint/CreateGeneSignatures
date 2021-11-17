@@ -1,4 +1,7 @@
 Log of changes between versions:
 
+v1.0.1: 
+-changed code example for plotting a heatmap based on the signatures
+
 v1.0.0:
 -initial Github commit

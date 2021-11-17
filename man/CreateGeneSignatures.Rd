@@ -77,10 +77,14 @@ lapply(signatures,length)
 library(pheatmap)
 logcpm <- log2(edgeR::cpm(y,log=FALSE)+1)
 
-# either as a whole, deactivating row clustering to preserve order from signatures
-# but enable columns clustering:
-pheatmap(mat=t(scale(t(logcpm[unique(unlist(signatures)),]))), 
-show_rownames=FALSE, cluster_rows = FALSE)
+# plot a heatmap in the order of names(signatures)
+col_order <- unlist(lapply(names(signatures), 
+                           function(x) grep(paste0("^", x), colnames(logcpm))))
+                           
+# use scaled logCPMs                           
+logcpmZ <- t(scale(t(logcpm[unique(unlist(signatures)),])))
+pheatmap(mat=logcpmZ[,col_order],
+         show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
 
 # or each signature individually:
 pheatmap(mat=t(scale(t(logcpm[signatures$CD4T,]))), show_rownames=FALSE)

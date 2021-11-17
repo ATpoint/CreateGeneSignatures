@@ -3,11 +3,13 @@
 \name{rankmatrix}
 \alias{rankmatrix}
 \title{For the genes being present in genes.ranged per celltype we rank from 1 (best rank) to length 
-of the current genes.ranged entry, and NA for genes not in that respective entry but in u:}
+of the current genes.ranged entry, and NA for genes not in that respective entry but in u.
+Modified from Kolde et al in RobustRankAggreg::rankMatrix()}
 \usage{
 rankmatrix(genes.ranged)
 }
 \description{
 For the genes being present in genes.ranged per celltype we rank from 1 (best rank) to length 
-of the current genes.ranged entry, and NA for genes not in that respective entry but in u:
+of the current genes.ranged entry, and NA for genes not in that respective entry but in u.
+Modified from Kolde et al in RobustRankAggreg::rankMatrix()
 }

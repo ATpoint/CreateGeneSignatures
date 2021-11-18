@@ -93,11 +93,8 @@ The user is therefore encouraged to try different settings, checking how many ge
 ## Why ranks?
 There are multiple strategies to transform differential expression results into gene signatures. 
 Given that differential analysis is the first step in this workflow one might be tempted to simply combine the obtained p-values into a single value, e.g.
-using Fisher's method, in order to select genes based on that value. The problem with p-values is that they, beside the effect size, also a function of statistical power.
-A gene with identical expression level and effect size measured in a 10 vs 10 comparison will result in lower p-values compared to a 3 vs 3 comparison.
-This becomes an even greater problem when dealing with single-cell data when doing single-cell level DE testing, e.g. comparing clusters with 20 and 200 cells versus
-clusters with 500 and 2000 cells. We therefore chose to only use the DE statistics to rank the differential genes per comparison and then use these ranks for the downstream analysis. This avoids directly comparing p-values between groups with differences in statistical power. The same problem holds true when comparing effect sizes
-rather than p-values as effect sizes are unreliable in case of low replicate numbers and/or the presence of low counts.
+using Fisher's method, in order to select genes based on that value. The problem with p-values is that they, beside the effect size, are also a function of statistical power, influenced by e.g. the expression level of a gene and its length. Also the number of samples per group play a notalbe role. 
+A gene with identical expression level and effect size measured in a 10 vs 10 sample comparison will result in lower p-values compared to a 3 vs 3 sample comparison. This becomes an even greater problem when dealing with single-cell data if doing single-cell level DE testing, e.g. comparing clusters with 20 and 200 cells versus clusters with 500 and 2000 cells. We therefore chose to only use the DE statistics to rank the differential genes per comparison and then use these ranks for the downstream analysis. This avoids directly comparing p-values between groups with differences in statistical power. The same problem holds true when comparing effect sizes rather than p-values as effect sizes are unreliable in case of low replicate numbers and/or the presence of low counts.
 
 ## Installation
 

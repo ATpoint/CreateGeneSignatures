@@ -5,7 +5,7 @@ celltype-specific gene signatures based on RNA-seq differential expression resul
 
 ## Example workflow:
 For this example we assume that the package is installed as described below.
-We use RNA-seq from (Haemopedia)[https://www.haemosphere.org/datasets/show], in this case four lymphoid celltypes from `Haemopedia-Human-RNASeq` dataset,
+We use RNA-seq from [Haemopedia](https://www.haemosphere.org/datasets/show), in this case four lymphoid celltypes from `Haemopedia-Human-RNASeq` dataset,
 which are included in the package example data. We first perform differential analysis with `edgeR` and then create a signature for every of the four celltypes,
 namely CD4 T cells, CD8 T cells, naive B cells and natural killer (NK) cells.
 

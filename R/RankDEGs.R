@@ -92,7 +92,7 @@ RankDEGs <- function(res, delim="_vs_",
   ####################################
   # Ranking
   ####################################
-
+  
   #/ Rank genes for each unique group:
   unq <- sort(unique(unlist(strsplit(names(res), delim))))
   
@@ -144,7 +144,7 @@ RankDEGs <- function(res, delim="_vs_",
     
   }
   
-  iszero <- sum(!sapply(l, function(k) lapply(k, function(x) length(x)))>0)
+  iszero <- sum(!lengths(l) > 0)
   if(iszero>0) message("There are ", iszero, " comparisons with zero genes")
   
   return(l)

@@ -1,5 +1,8 @@
 Log of changes between versions:
 
+v1.1.0:
+-made the ranking function robust against syntactically-invalid R names which in the previous version would have returned no genes at all
+
 v1.0.1: 
 -changed code example for plotting a heatmap based on the signatures
 

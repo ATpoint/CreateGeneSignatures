@@ -1,4 +1,4 @@
-# GeneSignatures
+# CreateGeneSignatures
 
 This package implements a simple yet effective rank-based strategy to produce 
 celltype-specific gene signatures based on RNA-seq differential expression results.

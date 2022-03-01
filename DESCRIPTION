@@ -1,7 +1,7 @@
 Package: CreateGeneSignatures
 Type: Package
 Title: A rank-based method to define gene signatures from gene expression data.
-Version: 1.0.1
+Version: 1.1.0
 Authors: Alexander Toenges <a.toenges@uni-muenster.de>
 Maintainer: Alexander Toenges <a.toenges@uni-muenster.de>
 Description: A rank-based method to define gene signatures based on differential gene expression results.

@@ -93,8 +93,17 @@ RankDEGs <- function(res, delim="_vs_",
   # Ranking
   ####################################
   
-  #/ Rank genes for each unique group:
+  #/ make robust against syntactically non-valid names
   unq <- sort(unique(unlist(strsplit(names(res), delim))))
+  lookup <- data.frame(original=unq, new=make.names(unq))
+  
+  if(!all(lookup$original==lookup$new))
+    warning(paste("Detected syntactically invalid names.",
+                  "It will work anyway, but be sure to double-check your results!",
+                  sep="\n"))
+  
+  unq <- make.names(unq)
+  names(res) <- make.names(names(res))
   
   l <- list()
   for(i in unq){
@@ -147,6 +156,13 @@ RankDEGs <- function(res, delim="_vs_",
   iszero <- sum(!lengths(l) > 0)
   if(iszero>0) message("There are ", iszero, " comparisons with zero genes")
   
-  return(l)
-  
+  #/ map names back to original
+  names(l) <- lookup$original[match(names(l), lookup$new)]
+  sapply(l, function(x)  {
+    
+    names(x) <- lookup$original[match(names(x), lookup$new)]
+    x
+    
+  }, simplify=FALSE)
+
 }

@@ -8,4 +8,4 @@ Description: A rank-based method to define gene signatures based on differential
 Depends: 
   R (>= 4.0),
 Encoding: UTF-8
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2

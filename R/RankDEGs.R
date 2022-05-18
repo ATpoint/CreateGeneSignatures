@@ -56,6 +56,11 @@
 #' 
 #' ranked <- RankDEGs(res = res)
 #' 
+#' # an example with improper names
+#' res <- sapply(c("1gr1_vs_.gr2","-gr2_vs_gr3","..gr1_vs_gr3"), function(x){
+#'   data.frame(Gene=paste0("Gene",1:10), logFC=rnorm(10,1,2),FDR=jitter(rep(0.04, 10), 20))
+#' },simplify=FALSE)
+#' 
 #' @export
 RankDEGs <- function(res, delim="_vs_", 
                      signif.column="FDR", signif.threshold=0.05,
@@ -100,6 +105,8 @@ RankDEGs <- function(res, delim="_vs_",
   if(!all(lookup$original==lookup$new))
     warning(paste("Detected syntactically invalid names.",
                   "It will work anyway, but be sure to double-check your results!",
+                  "The invalid names are:",
+                  paste0(setdiff(names(res), make.names(names(res))), collapse="\n"),
                   sep="\n"))
   
   unq <- make.names(unq)
@@ -164,5 +171,5 @@ RankDEGs <- function(res, delim="_vs_",
     x
     
   }, simplify=FALSE)
-
+  
 }

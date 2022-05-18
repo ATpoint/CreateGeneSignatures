@@ -1,5 +1,8 @@
 Log of changes between versions:
 
+v2.0.1:
+-fix typos in example section
+
 v2.0.0:
 - now support defining signatures for a group of celltypes, e.g. in the example set CD4T and CD8T versus the rest.
 This has the advantage that these two groups are not compared against each other which is beneficial as they share a lot of markers

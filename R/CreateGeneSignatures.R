@@ -44,7 +44,7 @@
 #' }, simplify = FALSE)
 #' 
 #' # Rank the DEGs:
-#' ranked <- rank_deg(res)
+#' ranked <- RankDEGs(res)
 #' 
 #' # Create signatures, keeping top 50 signature genes that separate the respective celltype
 #' # from all other celltypes:
@@ -66,16 +66,17 @@
 #' pheatmap(mat=logcpmZ[,col_order],
 #'          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
 #'          
-#' # or genes that separate the CD4T and CD8T cells from the rest
-#' signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"))
-#' logcpmZ2 <- t(scale(t(logcpm[signatures2,])))
-#' pheatmap(mat=logcpmZ2[,col_order],
-#'          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
 #' # or each signature individually:
 #' pheatmap(mat=t(scale(t(logcpm[signatures$CD4T,]))), show_rownames=FALSE)
 #' pheatmap(mat=t(scale(t(logcpm[signatures$CD8T,]))), show_rownames=FALSE)
 #' pheatmap(mat=t(scale(t(logcpm[signatures$NveB,]))), show_rownames=FALSE)
 #' pheatmap(mat=t(scale(t(logcpm[signatures$NK,]))), show_rownames=FALSE)
+#'          
+#' # or genes that separate the CD4T and CD8T cells from the rest
+#' signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"))
+#' logcpmZ2 <- t(scale(t(logcpm[signatures2,])))
+#' pheatmap(mat=logcpmZ2[,col_order],
+#'          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
 #' 
 #' The signatures represent those combination of genes separate each of the
 #' individual celltypes from all other celltypes. Here the parameters were very strict,

@@ -3,6 +3,8 @@
 #' Convert lists of ranked genes into celltype-specific signatures
 #' 
 #' @param ranked nested lists of ranked genes for each celltype, see details and the RankDEGs function
+#' @param use_groups trigger group-aware mode. A vector with celltype names to be used to define markers for as a group,
+#' so this group versus all others. See details.
 #' @param delim a string indicating the delimiter of names(ranked), e.g. celltype1_vs_celltype2 would be "_vs_"
 #' @param keep.n number of genes to keep per signature, by default all candidates are returned for manual posthoc filtering
 #' @param min.prop minimum proportion of comparisons per celltype that a gene must be included in. See details.
@@ -42,7 +44,7 @@
 #' }, simplify = FALSE)
 #' 
 #' # Rank the DEGs:
-#' ranked <- RankDEGs(res)
+#' ranked <- rank_deg(res)
 #' 
 #' # Create signatures, keeping top 50 signature genes that separate the respective celltype
 #' # from all other celltypes:
@@ -50,19 +52,25 @@
 #' # check number of genes. for CD8T cells we found < 50 genes:
 #' lapply(signatures,length) 
 #' 
+#' 
 #' # Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes
 #' library(pheatmap)
 #' logcpm <- log2(edgeR::cpm(y,log=FALSE)+1)
 #' 
 #' # plot a heatmap in the order of names(signatures)
-#' col_order <- unlist(lapply(names(signatures), 
+#' col_order <- unlist(lapply(names(ranked), 
 #'                            function(x) grep(paste0("^", x), colnames(logcpm))))
 #'                            
 #' # use scaled logCPMs                           
 #' logcpmZ <- t(scale(t(logcpm[unique(unlist(signatures)),])))
 #' pheatmap(mat=logcpmZ[,col_order],
 #'          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
-#' 
+#'          
+#' # or genes that separate the CD4T and CD8T cells from the rest
+#' signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"))
+#' logcpmZ2 <- t(scale(t(logcpm[signatures2,])))
+#' pheatmap(mat=logcpmZ2[,col_order],
+#'          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
 #' # or each signature individually:
 #' pheatmap(mat=t(scale(t(logcpm[signatures$CD4T,]))), show_rownames=FALSE)
 #' pheatmap(mat=t(scale(t(logcpm[signatures$CD8T,]))), show_rownames=FALSE)
@@ -106,31 +114,53 @@
 #' (or any) signature genes. The user is encouraged to try different values and check the set of marker genes using heatmaps to inspect the spearation between celltypes
 #' as suggested in the examples section. 
 #' 
+#' In version 2.0.0 we introduced the \code{use_groups} argument. This allows to specify a group of celltypes and the function will then infer 
+#' markers for this group versus the rest. In the examplle aboves we use it to define CD4/CD8 markers. The advantage here is that these
+#' cells have many markers in common so by defining them as a group we only look for "pan"-T cell markers and that retains more genes
+#' that when treating both celltypes as independent groups. Of course one could fiddle the same behaviour by playing with min.prop,
+#' but the use_groups argument makes this convenient to use.
+#' 
 #' @export
-CreateGeneSignatures <- function(ranked, delim="_vs_", keep.n=Inf, 
-                                 min.prop=0.75){
+CreateGeneSignatures <- function(ranked, use_groups=NULL,
+                                 delim="_vs_", keep.n=Inf, min.prop=1){
+  
+  if(!is.null(use_groups)){
+    if(!sum(use_groups %in% names(ranked))==length(use_groups))
+      stop("Make sure use_groups are part of names(ranked)")
+  }
   
   if(is.null(names(ranked))) stop("ranked has no names")
   if(!min.prop <= 1 & min.prop > 0) stop("min.prop must be between > 0 and <= 1")
   
-  nms <- names(ranked)
+  #/ either find markers for each element of ranked or for groups of elements.
+  #/ the latter would e.g. mean to find markers that are suitable to distinguish groupA and groupB from the rest
+  if(is.null(use_groups)){
+    
+    nms <- names(ranked)
+    
+  } else nms <- use_groups
   
   s <- sapply(nms, function(x){
     
     genes.ranged <- ranked[[x]]
-    genes.ranged[[x]] <- NULL # if the list contains the reference cell type itself
+    
+    remove_these <- if(is.null(use_groups)) x else nms
+    
+    genes.ranged[remove_these] <- NULL # if the list contains the reference cell type itself
     
     #/ rank matrix, low values means high ranks and viceversa, 1 means not present in that pairwise list: 
-    rmat <- rankmatrix(genes.ranged = genes.ranged)
+    rmat <- rankmatrix(genes.ranged=genes.ranged)
     
-    #/ Now minimize the ranks in an iterative fashion.
-    #/ Start with genes present in all comparison, n-1, n-2 etc.
-    #/ Function is simply the mean
+    # Get the genes that qualify as markers given the number of groups and the min.prop
     isna <- !is.na(rmat)
-    from=ncol(rmat)
-    to=round(min.prop*from)
-    med <- function(y) median(y,na.rm=TRUE)
+    from <- ncol(rmat)
+    to   <- floor(min.prop*from)
+    med  <- function(y) median(y,na.rm=TRUE)
     
+    #/ take the rankmatrix (so each entry is the rank of the gene in the individual ranking),
+    #/ and then calculate the median of the ranks -- that is the final ranking metric
+    #/ as it aims to find genes that are consistently high -- and we use the median to
+    #/ protect from outliers e.g. when a single ranking is very high but all others are middle-ish or low
     final <- unlist(lapply(from:to, function(n){
       
       idx <- base::rowSums(isna)==n
@@ -144,7 +174,11 @@ CreateGeneSignatures <- function(ranked, delim="_vs_", keep.n=Inf,
     
   },simplify = FALSE)
   
-  return(s)
+  if(!is.null(use_groups)){
+    
+    return(Reduce(intersect, s))
+    
+  } else return(s)
   
 }
 
@@ -160,7 +194,7 @@ rankmatrix <- function (genes.ranged)
   rmat = matrix(NA, nrow=length(u), ncol=length(genes.ranged), 
                 dimnames=list(u, names(genes.ranged)))
   
-  #/ fill matrix with ranks per gene and celltype. I
+  #/ fill matrix with ranks per gene and celltype.
   #/ If gene is missing in a celltype (=was not signif vs other celltypes),
   #/ then leave at NA:
   for (i in names(genes.ranged)) {

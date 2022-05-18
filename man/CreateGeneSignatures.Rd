@@ -4,10 +4,19 @@
 \alias{CreateGeneSignatures}
 \title{Create gene signatures in a rank-based style}
 \usage{
-CreateGeneSignatures(ranked, delim = "_vs_", keep.n = Inf, min.prop = 0.75)
+CreateGeneSignatures(
+  ranked,
+  use_groups = NULL,
+  delim = "_vs_",
+  keep.n = Inf,
+  min.prop = 1
+)
 }
 \arguments{
 \item{ranked}{nested lists of ranked genes for each celltype, see details and the RankDEGs function}
+
+\item{use_groups}{trigger group-aware mode. A vector with celltype names to be used to define markers for as a group,
+so this group versus all others. See details.}
 
 \item{delim}{a string indicating the delimiter of names(ranked), e.g. celltype1_vs_celltype2 would be "_vs_"}
 
@@ -30,7 +39,13 @@ If \code{min.prop=2/3} is chosen then signature genes must rank high in at least
 the more stringent the filtering. If celltypes are decently separated it might be trivial to find large numbers of signature genes even with min.prop of 1.
 In cases where cells are very similar to each other, e.g. cells being close in a developmental continuum, one will need to lower this threshold in order to get some
 (or any) signature genes. The user is encouraged to try different values and check the set of marker genes using heatmaps to inspect the spearation between celltypes
-as suggested in the examples section.
+as suggested in the examples section. 
+
+In version 2.0.0 we introduced the \code{use_groups} argument. This allows to specify a group of celltypes and the function will then infer 
+markers for this group versus the rest. In the examplle aboves we use it to define CD4/CD8 markers. The advantage here is that these
+cells have many markers in common so by defining them as a group we only look for "pan"-T cell markers and that retains more genes
+that when treating both celltypes as independent groups. Of course one could fiddle the same behaviour by playing with min.prop,
+but the use_groups argument makes this convenient to use.
 }
 \examples{
 # load RNA-seq data for CD4T-, CD8T and naive B cells from Haemopedia:
@@ -65,7 +80,7 @@ return(data.frame(Gene=rownames(tt), tt))
 }, simplify = FALSE)
 
 # Rank the DEGs:
-ranked <- RankDEGs(res)
+ranked <- rank_deg(res)
 
 # Create signatures, keeping top 50 signature genes that separate the respective celltype
 # from all other celltypes:
@@ -73,19 +88,25 @@ signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1)
 # check number of genes. for CD8T cells we found < 50 genes:
 lapply(signatures,length) 
 
+
 # Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes
 library(pheatmap)
 logcpm <- log2(edgeR::cpm(y,log=FALSE)+1)
 
 # plot a heatmap in the order of names(signatures)
-col_order <- unlist(lapply(names(signatures), 
+col_order <- unlist(lapply(names(ranked), 
                            function(x) grep(paste0("^", x), colnames(logcpm))))
                            
 # use scaled logCPMs                           
 logcpmZ <- t(scale(t(logcpm[unique(unlist(signatures)),])))
 pheatmap(mat=logcpmZ[,col_order],
          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
-
+         
+# or genes that separate the CD4T and CD8T cells from the rest
+signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"))
+logcpmZ2 <- t(scale(t(logcpm[signatures2,])))
+pheatmap(mat=logcpmZ2[,col_order],
+         show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
 # or each signature individually:
 pheatmap(mat=t(scale(t(logcpm[signatures$CD4T,]))), show_rownames=FALSE)
 pheatmap(mat=t(scale(t(logcpm[signatures$CD8T,]))), show_rownames=FALSE)

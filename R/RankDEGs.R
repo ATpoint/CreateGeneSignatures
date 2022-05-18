@@ -11,26 +11,18 @@
 #' @param effect.threshold keep only genes with effect.column above this threshold, could be a minimum effect size even though it is recommended to explicitely test against
 #' the desired minimum effect size rather than postfiltering, see details.
 #' @param gene.column colname storing genes or any kind of row identifiers, those will be returned in the output meeting the above criteria
-#' @param rnk.method the ranking method for genes meeting criteria, see details.
+#' @param rnk.column use this column for the ranking
+#' @param rnk.method either 'decreasing' or 'increasing' ranking based on \code{rnk.column}
 #' 
 #' @details 
 #' For an example of how the input should look like see the examples. The pairwise comparisons must be unique, so if something like
-#' celltype1_vs_celltype2 is present then do not include celltype2_vs_celltype1 into \code{res} as this is indentical and only the sign of the 
-#' effect size changes. The function handles this internally for every celltype.
+#' celltype1_vs_celltype2 is present then do not include celltype2_vs_celltype1 into \code{res} as this is identical and only the sign of the 
+#' effect size (e.g. the logFC) changes. The function handles this internally for every celltype.
 #' 
-#' The ranking has three options:
-#' 1) By significance if setting \code{rnk.method="signif"}, using signed \code{-log10(signif.column)} ranking low significances high and vice versa
-#' This approach makes sense especially if significances come from a function such as \code{glmTreat} from `edgeR` where a minimum fold change was used
-#' as Null hypothesis to eliminate genes with potentially high significances but small effect sizes such as genes with large expression values.
-#' See for details the TREAT paper (https://doi.org/10.1093/bioinformatics/btp053) and an answer from the senior author at StackExchange Bioinformatics
-#' (https://bioinformatics.stackexchange.com/a/13580/3051). This is only a suggestion, the user is of course free to use any testing machinery.  
-#' 2) By effect sizes if setting \code{rnk.method="effect"}, using the \code{-log10(effect.column)} ordered decreasingly. 
-#' This approaches probabaly should only be used if the effect sizes were corrected (shrunken) to avoid large effects due to small counts, as the effect size
-#' estimates are usually noisy when counts are low. See for more background information e.g. the `DESeq2` vignette towards effect size shrinkage or this paper
-#' researching and discussion effect size shrinkage (https://doi.org/10.1093/bioinformatics/bty895).  
-#' 3) By a combination of the aforementioned settings if \code{rnk.method="combination"}. In this case the ranking is based on 
-#' \code{-log10(effect.column)} * \code{effect.column} ordered decreasingly. This may might sense if one wants to include effect sizes into the ranking
-#' but penalize large effect sizes with low significances. 
+#' The \code{signif.column} and \code{effect.column} are used first to filter the data, e.g. for FDR and logFC, and then the ranking is done based
+#' on the \code{rnk.column} but aware of the direction of change based on \code{effect.column}, and in its current state only genes
+#' with a positive effect size are taken into account. The \code{rnk.column} could e.g. e the nominal PValue or t-stat column which both
+#' have the advantage over FDR that they usually have no ties.
 #'
 #' The output will be a nested list with the ranked genes for every celltype compared to every other celltype based in the entries of \code{res},
 #' see the examples. Something like:
@@ -44,44 +36,42 @@
 #' ..celltype1
 #' ..celltype2
 #'
-#' For an example with real data see the examples of the \code{CreateGeneSignatures} function of this package.
-#' 
+#' For an example with real data see the examples of the \code{CreateGeneSignatures} function of this package.#' 
 #' @author Alexander Toenges
 #' 
 #' @examples 
-#' # first make some example DE results, then rank:
+#' # first make some dummy DE results, then rank:
+#' set.seed(1)
 #' res <- sapply(c("gr1_vs_gr2","gr2_vs_gr3","gr1_vs_gr3"), function(x){
-#'   data.frame(Gene=paste0("Gene",1:10), logFC=rnorm(10,1,2),FDR=jitter(rep(0.04, 10), 20))
+#'   data.frame(Gene=paste0("Gene",1:10), 
+#'              logFC=rnorm(10,1,2),
+#'              PValue=jitter(rep(0.001, 10), 20),
+#'              FDR=jitter(rep(0.04, 10), 20))
 #' },simplify=FALSE)
 #' 
-#' ranked <- RankDEGs(res = res)
+#' # this is how the results tables look:
+#' res$gr1_vs_gr2
 #' 
-#' # an example with improper names
-#' res <- sapply(c("1gr1_vs_.gr2","-gr2_vs_gr3","..gr1_vs_gr3"), function(x){
-#'   data.frame(Gene=paste0("Gene",1:10), logFC=rnorm(10,1,2),FDR=jitter(rep(0.04, 10), 20))
-#' },simplify=FALSE)
+#' ranked <- RankDEGs(res=res, rnk.column="PValue", rnk.method="increasing")
 #' 
 #' @export
 RankDEGs <- function(res, delim="_vs_", 
                      signif.column="FDR", signif.threshold=0.05,
                      effect.column="logFC", effect.threshold=0,
-                     gene.column="Gene", rnk.method=c("signif", "effect", "combi")){
+                     gene.column="Gene", rnk.column="PValue", rnk.method="increasing"){
   
-  ####################################
+  #---------------------------
   # Checks
-  ####################################
+  #---------------------------
   
-  if(class(res) != "list" | is.null(names(res))){
+  if(!class(res) %in% c("list", "SimpleList") | is.null(names(res))){
     stop("res must be a named list", call.=FALSE)
   }
   
   if(!all(grepl(delim, names(res)))) stop("delim was not found in all names of the res")
   
-  invisible(match.arg(arg = class(signif.threshold), choices = "numeric"))
-  invisible(match.arg(arg = class(effect.threshold), choices = "numeric"))
-  
-  #/ Fields existing:
-  rnk.method <- match.arg(rnk.method)
+  invisible(match.arg(arg=class(signif.threshold), choices="numeric"))
+  invisible(match.arg(arg=class(effect.threshold), choices="numeric"))
   
   check.gf <- sum(unlist(lapply(res, function(x) 
     if(!gene.column %in% colnames(x)) return(1) else return(0))))
@@ -89,14 +79,20 @@ RankDEGs <- function(res, delim="_vs_",
     if(!signif.column %in% colnames(x)) return(1) else return(0))))
   check.ef <- sum(unlist(lapply(res, function(x) 
     if(!effect.column %in% colnames(x)) return(1) else return(0))))
+  check.rk <- sum(unlist(lapply(res, function(x) 
+    if(!rnk.column %in% colnames(x)) return(1) else return(0))))
   
   if(check.gf>0) stop("gene.column does not exist in all entries of res.list!")
   if(check.sf>0) stop("signif.column does not exist in all entries of res.list!")
   if(check.ef>0) stop("effect.column does not exist in all entries of res.list!")
+  if(check.rk>0) stop("rnk.column does not exist in all entries of res.list!")
   
-  ####################################
+  if(!rnk.method %in% c("decreasing", "increasing"))
+    stop("rnk.method must be one of <increasing, decreasing>")
+  
+  #---------------------------
   # Ranking
-  ####################################
+  #---------------------------
   
   #/ make robust against syntactically non-valid names
   unq <- sort(unique(unlist(strsplit(names(res), delim))))
@@ -106,7 +102,7 @@ RankDEGs <- function(res, delim="_vs_",
     warning(paste("Detected syntactically invalid names.",
                   "It will work anyway, but be sure to double-check your results!",
                   "The invalid names are:",
-                  paste0(setdiff(names(res), make.names(names(res))), collapse="\n"),
+                  paste0(lookup$original[which(!lookup$original==lookup$new)], collapse="\n"),
                   sep="\n"))
   
   unq <- make.names(unq)
@@ -116,15 +112,15 @@ RankDEGs <- function(res, delim="_vs_",
   for(i in unq){
     
     nm <- grep(paste(paste0("^",i,delim),paste0(delim,i,"$"), sep="|"), 
-               names(res), value = TRUE)
+               names(res), value=TRUE)
     
     l[[i]] <- 
-      lapply(X = nm, FUN = function(x)
-        
-      {
+      lapply(X=nm, FUN=function(x){
         
         s  <- strsplit(x,delim)[[1]]
+        
         tt <- res[[x]]
+        
         if(i==s[2]) tt[,effect.column] <- tt[,effect.column]*-1
         
         if(!is.null(signif.column)) {
@@ -139,16 +135,11 @@ RankDEGs <- function(res, delim="_vs_",
         
         if(nrow(tt)>0){
           
-          if(rnk.method == "effect"){
-            ranked <- tt[order(tt[,effect.column], decreasing=TRUE),][,gene.column]
-          }
-          if(rnk.method == "signif"){
-            ranked <- tt[order(tt[,signif.column], decreasing=FALSE),][,gene.column]
-          }
-          if(rnk.method == "combi"){
-            tt[,"combi"] <- -log10(tt[,signif.column]+.Machine$double.xmin)*tt[,effect.column]
-            ranked <- tt[order(tt[,"combi"], decreasing=TRUE),][,gene.column]
-          }
+          decreasing <- if(rnk.method=="decreasing") TRUE else FALSE
+          
+          ix <- sort(tt[,rnk.column], index.return=TRUE)$ix
+          
+          ranked <- tt[ix,gene.column]
           
         } else ranked <- NULL
         

@@ -12,7 +12,8 @@ RankDEGs(
   effect.column = "logFC",
   effect.threshold = 0,
   gene.column = "Gene",
-  rnk.method = c("signif", "effect", "combi")
+  rnk.column = "PValue",
+  rnk.method = "increasing"
 )
 }
 \arguments{
@@ -32,29 +33,22 @@ the desired minimum effect size rather than postfiltering, see details.}
 
 \item{gene.column}{colname storing genes or any kind of row identifiers, those will be returned in the output meeting the above criteria}
 
-\item{rnk.method}{the ranking method for genes meeting criteria, see details.}
+\item{rnk.column}{use this column for the ranking}
+
+\item{rnk.method}{either 'decreasing' or 'increasing' ranking based on \code{rnk.column}}
 }
 \description{
 Rank genes from lists of pairwise comparison by significance or effect size
 }
 \details{
 For an example of how the input should look like see the examples. The pairwise comparisons must be unique, so if something like
-celltype1_vs_celltype2 is present then do not include celltype2_vs_celltype1 into \code{res} as this is indentical and only the sign of the 
-effect size changes. The function handles this internally for every celltype.
+celltype1_vs_celltype2 is present then do not include celltype2_vs_celltype1 into \code{res} as this is identical and only the sign of the 
+effect size (e.g. the logFC) changes. The function handles this internally for every celltype.
 
-The ranking has three options:
-1) By significance if setting \code{rnk.method="signif"}, using signed \code{-log10(signif.column)} ranking low significances high and vice versa
-This approach makes sense especially if significances come from a function such as \code{glmTreat} from `edgeR` where a minimum fold change was used
-as Null hypothesis to eliminate genes with potentially high significances but small effect sizes such as genes with large expression values.
-See for details the TREAT paper (https://doi.org/10.1093/bioinformatics/btp053) and an answer from the senior author at StackExchange Bioinformatics
-(https://bioinformatics.stackexchange.com/a/13580/3051). This is only a suggestion, the user is of course free to use any testing machinery.  
-2) By effect sizes if setting \code{rnk.method="effect"}, using the \code{-log10(effect.column)} ordered decreasingly. 
-This approaches probabaly should only be used if the effect sizes were corrected (shrunken) to avoid large effects due to small counts, as the effect size
-estimates are usually noisy when counts are low. See for more background information e.g. the `DESeq2` vignette towards effect size shrinkage or this paper
-researching and discussion effect size shrinkage (https://doi.org/10.1093/bioinformatics/bty895).  
-3) By a combination of the aforementioned settings if \code{rnk.method="combination"}. In this case the ranking is based on 
-\code{-log10(effect.column)} * \code{effect.column} ordered decreasingly. This may might sense if one wants to include effect sizes into the ranking
-but penalize large effect sizes with low significances. 
+The \code{signif.column} and \code{effect.column} are used first to filter the data, e.g. for FDR and logFC, and then the ranking is done based
+on the \code{rnk.column} but aware of the direction of change based on \code{effect.column}, and in its current state only genes
+with a positive effect size are taken into account. The \code{rnk.column} could e.g. e the nominal PValue or t-stat column which both
+have the advantage over FDR that they usually have no ties.
 
 The output will be a nested list with the ranked genes for every celltype compared to every other celltype based in the entries of \code{res},
 see the examples. Something like:
@@ -68,15 +62,22 @@ $celltype3
 ..celltype1
 ..celltype2
 
-For an example with real data see the examples of the \code{CreateGeneSignatures} function of this package.
+For an example with real data see the examples of the \code{CreateGeneSignatures} function of this package.#'
 }
 \examples{
-# first make some example DE results, then rank:
+# first make some dummy DE results, then rank:
+set.seed(1)
 res <- sapply(c("gr1_vs_gr2","gr2_vs_gr3","gr1_vs_gr3"), function(x){
-  data.frame(Gene=paste0("Gene",1:10), logFC=rnorm(10,1,2),FDR=jitter(rep(0.04, 10), 20))
+  data.frame(Gene=paste0("Gene",1:10), 
+             logFC=rnorm(10,1,2),
+             PValue=jitter(rep(0.001, 10), 20),
+             FDR=jitter(rep(0.04, 10), 20))
 },simplify=FALSE)
 
-ranked <- RankDEGs(res = res)
+# this is how the results tables look:
+res$gr1_vs_gr2
+
+ranked <- RankDEGs(res=res, rnk.column="PValue", rnk.method="increasing")
 
 }
 \author{

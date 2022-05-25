@@ -19,6 +19,8 @@ CreateGeneSignatures(
 \item{use_groups}{trigger group-aware mode. A vector with celltype names to be used to define markers for as a group,
 so this group versus all others. See details.}
 
+\item{exclude_groups}{vector, remove these groups from the signature creation}
+
 \item{delim}{a string indicating the delimiter of names(ranked), e.g. celltype1_vs_celltype2 would be "_vs_"}
 
 \item{keep.n}{number of genes to keep per signature, by default all candidates are returned for manual posthoc filtering}
@@ -114,6 +116,9 @@ signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"))
 logcpmZ2 <- t(scale(t(logcpm[signatures2,])))
 pheatmap(mat=logcpmZ2[,col_order],
          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
+         
+# find signatures but exclude the CD4T group        
+signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"))
 
 The signatures represent those combination of genes separate each of the
 individual celltypes from all other celltypes. Here the parameters were very strict,

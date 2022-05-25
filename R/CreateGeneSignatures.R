@@ -122,25 +122,52 @@
 #' but the use_groups argument makes this convenient to use.
 #' 
 #' @export
-CreateGeneSignatures <- function(ranked, use_groups=NULL,
+CreateGeneSignatures <- function(ranked, 
+                                 use_groups=NULL, exclude_groups=NULL,
                                  delim="_vs_", keep.n=Inf, min.prop=1){
   
+  #/ checks
   if(!is.null(use_groups)){
     if(!sum(use_groups %in% names(ranked))==length(use_groups))
       stop("Make sure use_groups are part of names(ranked)")
   }
   
+  if(!is.null(exclude_groups)){
+    if(!sum(exclude_groups %in% names(ranked))==length(exclude_groups))
+      stop("Make sure exclude_groups are part of names(ranked)")
+  }
+  
+  if(!is.null(use_groups) & !is.null(exclude_groups)){
+    if(length(intersect(use_groups, exclude_groups))>1)
+      stop("There are overlaps between elements in use_groups and exclude_groups!")
+  }
+  
   if(is.null(names(ranked))) stop("ranked has no names")
   if(!min.prop <= 1 & min.prop > 0) stop("min.prop must be between > 0 and <= 1")
   
-  #/ either find markers for each element of ranked or for groups of elements.
-  #/ the latter would e.g. mean to find markers that are suitable to distinguish groupA and groupB from the rest
+  #/ optionally remove exclude_groups from ranked
+  if(!is.null(exclude_groups)){
+    
+    keep_them <- setdiff(names(ranked), exclude_groups)
+    
+    ranked <- 
+      sapply(keep_them, function(x){
+        
+        r <- ranked[[x]]
+        r[setdiff(keep_them, x)]
+        
+      }, simplify=FALSE)
+    
+  }
+  
+  #/ optionally only look at the group(s) in use_groups rather than all vs all
   if(is.null(use_groups)){
     
     nms <- names(ranked)
     
   } else nms <- use_groups
   
+  #/ find the signature genes
   s <- sapply(nms, function(x){
     
     genes.ranged <- ranked[[x]]

@@ -3,7 +3,7 @@
 #' Rank genes from lists of pairwise comparison by significance or effect size
 #' 
 #' @param res a named list of pairwise DE results, see details.
-#' @param delim a string that delimits the comparison groups in \code{names(res)}, e.g. celltype1_vs_ccelltype2 would be "_vs_"
+#' @param delim a string that delimits the comparison groups in \code{names(res)}, e.g. celltype1_vs_celltype2 would be "_vs_"
 #' @param signif.column colname storing significances to use for filtering, e.g. FDR
 #' @param signif.threshold keep only genes with \code{signif.column} below that threshold
 #' @param effect.column colname storing the effect size, e.g. logFC. Must be a zero-centered effect size so effect size > 0 means higher in one group and < 0 means lower.

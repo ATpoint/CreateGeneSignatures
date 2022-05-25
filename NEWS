@@ -1,5 +1,8 @@
 Log of changes between versions:
 
+v2.1.0: 
+- added exclude_groups to CreateGeneSignatures() to remove groups from the signature process
+
 v2.0.1:
 -fix typos in example section
 

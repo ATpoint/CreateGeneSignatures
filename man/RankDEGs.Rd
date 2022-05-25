@@ -19,7 +19,7 @@ RankDEGs(
 \arguments{
 \item{res}{a named list of pairwise DE results, see details.}
 
-\item{delim}{a string that delimits the comparison groups in \code{names(res)}, e.g. celltype1_vs_ccelltype2 would be "_vs_"}
+\item{delim}{a string that delimits the comparison groups in \code{names(res)}, e.g. celltype1_vs_celltype2 would be "_vs_"}
 
 \item{signif.column}{colname storing significances to use for filtering, e.g. FDR}
 

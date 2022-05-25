@@ -7,6 +7,7 @@
 CreateGeneSignatures(
   ranked,
   use_groups = NULL,
+  exclude_groups = NULL,
   delim = "_vs_",
   keep.n = Inf,
   min.prop = 1

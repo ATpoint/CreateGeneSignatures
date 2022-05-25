@@ -82,7 +82,7 @@
 #' # find signatures but exclude the CD4T group        
 #' signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"))
 #' 
-#' #' @details 
+#' @details 
 #' The signatures represent those combination of genes separate each of the
 #' individual celltypes from all other celltypes. Here the parameters were very strict,
 #' e.g. min.prop=1. This might make sense if celltypes are very different from each other,

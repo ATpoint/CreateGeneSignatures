@@ -31,29 +31,6 @@ so this group versus all others. See details.}
 Convert lists of ranked genes into celltype-specific signatures
 }
 \details{
-The signatures represent those combination of genes separate each of the
-individual celltypes from all other celltypes. Here the parameters were very strict,
-e.g. min.prop=1. This might make sense if celltypes are very different from each other,
-so there are in case sufficient numbers of genes per celltype being overexpressed compared
-to all other celltypes. If cells are expected to be less distinct, e.g. hematopoietic
-progenitors that are developmentally "close" e.g. in a developmental continuum/trajectory
-one might need to lower min.prop to get a sufficient number of genes per signature.
-The user is encouraged to try different settings, checking how many genes per celltype
-can be obtained with the given setting followed by inspection of the separation using heatmaps
-as described in the examples. In might be the case though that cells cannot be reliably distinguished
-using transcriptomics alone, or that only very few or no signature genes can be obtained.
-The latter could be the case if focusing on a celltype that is developmentally "between"
-two cell types, say a celltype that comes developmentally after a stem cell and upstream of
-a more differentiated progenitor. This celltype might express pretty much all genes of both aforementioned
-celltypes but at slightly different levels, not enough though to quality as markers.
-Plotting heatmaps using the pooled marker genes of all celltypes should then show that these cells
-(at modest levels) express genes that are markers in the other celltypes.
-
-One should remember that a signature as a whole should separate a celltype from all
-other celltypes. Therefore not every gene by itself must be upregulated int he given 
-celltype against all other celltypes but the combination of all signature genes is the key
-for a proper celltype separation.
-
 The function takes as input a nested list that, for every celltype, contains the ranked genes from pairwise comparisons against every other
 celltype in this analysis, see also the \code{RankDEGs} function of this package. For every celltype first a rank matrix is created that
 stores the ranked genes from every pairwise comparison, assigning low scores to genes that ranked high in the input ranking and vice versa.

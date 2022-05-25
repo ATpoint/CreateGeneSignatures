@@ -30,26 +30,6 @@ so this group versus all others. See details.}
 \description{
 Convert lists of ranked genes into celltype-specific signatures
 }
-\details{
-The function takes as input a nested list that, for every celltype, contains the ranked genes from pairwise comparisons against every other
-celltype in this analysis, see also the \code{RankDEGs} function of this package. For every celltype first a rank matrix is created that
-stores the ranked genes from every pairwise comparison, assigning low scores to genes that ranked high in the input ranking and vice versa.
-Genes to form the signatures are then selected by choosing those genes with minimal ranks across all comparisons.
-In an iterative fashion genes that ranked high all comparisons are chosen first (and then ordered by median score), then genes ranked high in all but one, 
-in all but two, all but three etc comparisons. The user can choose via \code{min.prop} the fraction of comparisons that a gene be highly ranked in.
-For example a setup with four celltypes and \code{min.prop=1} would mean that only genes are included that ranked high in all comparisons.
-If \code{min.prop=2/3} is chosen then signature genes must rank high in at least two out of three comparisons. The higher this value between (between zero and one)
-the more stringent the filtering. If celltypes are decently separated it might be trivial to find large numbers of signature genes even with min.prop of 1.
-In cases where cells are very similar to each other, e.g. cells being close in a developmental continuum, one will need to lower this threshold in order to get some
-(or any) signature genes. The user is encouraged to try different values and check the set of marker genes using heatmaps to inspect the spearation between celltypes
-as suggested in the examples section. 
-
-In version 2.0.0 we introduced the \code{use_groups} argument. This allows to specify a group of celltypes and the function will then infer 
-markers for this group versus the rest. In the examplle aboves we use it to define CD4/CD8 markers. The advantage here is that these
-cells have many markers in common so by defining them as a group we only look for "pan"-T cell markers and that retains more genes
-that when treating both celltypes as independent groups. Of course one could fiddle the same behaviour by playing with min.prop,
-but the use_groups argument makes this convenient to use.
-}
 \examples{
 # load RNA-seq data for CD4T-, CD8T and naive B cells from Haemopedia:
 counts <- readRDS(paste0(
@@ -120,6 +100,7 @@ pheatmap(mat=logcpmZ2[,col_order],
 # find signatures but exclude the CD4T group        
 signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"))
 
+#' @details 
 The signatures represent those combination of genes separate each of the
 individual celltypes from all other celltypes. Here the parameters were very strict,
 e.g. min.prop=1. This might make sense if celltypes are very different from each other,
@@ -142,6 +123,25 @@ One should remember that a signature as a whole should separate a celltype from 
 other celltypes. Therefore not every gene by itself must be upregulated int he given 
 celltype against all other celltypes but the combination of all signature genes is the key
 for a proper celltype separation.
+
+The function takes as input a nested list that, for every celltype, contains the ranked genes from pairwise comparisons against every other
+celltype in this analysis, see also the \code{RankDEGs} function of this package. For every celltype first a rank matrix is created that
+stores the ranked genes from every pairwise comparison, assigning low scores to genes that ranked high in the input ranking and vice versa.
+Genes to form the signatures are then selected by choosing those genes with minimal ranks across all comparisons.
+In an iterative fashion genes that ranked high all comparisons are chosen first (and then ordered by median score), then genes ranked high in all but one, 
+in all but two, all but three etc comparisons. The user can choose via \code{min.prop} the fraction of comparisons that a gene be highly ranked in.
+For example a setup with four celltypes and \code{min.prop=1} would mean that only genes are included that ranked high in all comparisons.
+If \code{min.prop=2/3} is chosen then signature genes must rank high in at least two out of three comparisons. The higher this value between (between zero and one)
+the more stringent the filtering. If celltypes are decently separated it might be trivial to find large numbers of signature genes even with min.prop of 1.
+In cases where cells are very similar to each other, e.g. cells being close in a developmental continuum, one will need to lower this threshold in order to get some
+(or any) signature genes. The user is encouraged to try different values and check the set of marker genes using heatmaps to inspect the spearation between celltypes
+as suggested in the examples section. 
+
+In version 2.0.0 we introduced the \code{use_groups} argument. This allows to specify a group of celltypes and the function will then infer 
+markers for this group versus the rest. In the examplle aboves we use it to define CD4/CD8 markers. The advantage here is that these
+cells have many markers in common so by defining them as a group we only look for "pan"-T cell markers and that retains more genes
+that when treating both celltypes as independent groups. Of course one could fiddle the same behaviour by playing with min.prop,
+but the use_groups argument makes this convenient to use.
 
 }
 \author{

@@ -9,6 +9,8 @@
 #' @param delim a string indicating the delimiter of names(ranked), e.g. celltype1_vs_celltype2 would be "_vs_"
 #' @param keep.n number of genes to keep per signature, by default all candidates are returned for manual posthoc filtering
 #' @param min.prop minimum proportion of comparisons per celltype that a gene must be included in. See details.
+#' @param extended logical, whether to output the signature genes as a data.frame that indicates whether the gene
+#' qualified as a marker against the other groups (1) or not (0)
 #' 
 #' @author Alexander Toenges
 #' 
@@ -49,7 +51,7 @@
 #' 
 #' # Create signatures, keeping top 50 signature genes that separate the respective celltype
 #' # from all other celltypes:
-#' signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1)
+#' signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1, extended=FALSE)
 #' # check number of genes. for CD8T cells we found < 50 genes:
 #' lapply(signatures,length) 
 #' 
@@ -74,13 +76,20 @@
 #' pheatmap(mat=t(scale(t(logcpm[signatures$NK,]))), show_rownames=FALSE)
 #'          
 #' # or genes that separate the CD4T and CD8T cells from the rest
-#' signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"))
+#' signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"), extended=FALSE)
 #' logcpmZ2 <- t(scale(t(logcpm[signatures2,])))
 #' pheatmap(mat=logcpmZ2[,col_order],
-#'          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
+#'          show_rownames=TRUE, cluster_rows=FALSE, cluster_cols=FALSE)
 #'          
-#' # find signatures but exclude the CD4T group        
-#' signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"))
+#' # find signatures for each group but exclude the CD4T categorically
+#' signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"), extended=FALSE)
+#' 
+#' # Find all markers for each group against all but one group and output the extended table
+#' # to easily see which group the gene does not qualify as a marker for.
+#' # Here, the genes in the below tail command are markers for CD4T against NK and NveB but do not separate CD4T from CD8T.
+#' signatures4 <- CreateGeneSignatures(ranked=ranked, min.prop=2/3, extended=TRUE)
+#' tail(signatures4$CD4T)
+#' 
 #' 
 #' @details 
 #' The function takes as input a nested list that, for every celltype, contains the ranked genes from pairwise comparisons against every other
@@ -99,13 +108,13 @@
 #' In version 2.0.0 we introduced the \code{use_groups} argument. This allows to specify a group of celltypes and the function will then infer 
 #' markers for this group versus the rest. In the examplle aboves we use it to define CD4/CD8 markers. The advantage here is that these
 #' cells have many markers in common so by defining them as a group we only look for "pan"-T cell markers and that retains more genes
-#' that when treating both celltypes as independent groups. Of course one could fiddle the same behaviour by playing with min.prop,
-#' but the use_groups argument makes this convenient to use.
+#' that when treating both celltypes as independent groups. 
 #' 
 #' @export
 CreateGeneSignatures <- function(ranked, 
                                  use_groups=NULL, exclude_groups=NULL,
-                                 delim="_vs_", keep.n=Inf, min.prop=1){
+                                 delim="_vs_", keep.n=Inf, min.prop=1,
+                                 extended=TRUE){
   
   #/ checks
   if(!is.null(use_groups)){
@@ -168,26 +177,79 @@ CreateGeneSignatures <- function(ranked,
     
     #/ take the rankmatrix (so each entry is the rank of the gene in the individual ranking),
     #/ and then calculate the median of the ranks -- that is the final ranking metric
-    #/ as it aims to find genes that are consistently high -- and we use the median to
-    #/ protect from outliers e.g. when a single ranking is very high but all others are middle-ish or low
-    final <- unlist(lapply(from:to, function(n){
+    final <- lapply(from:to, function(n){
       
       idx <- base::rowSums(isna)==n
       if(sum(idx)==0) return(NULL)
-      mat <- apply(rmat[idx,,drop=FALSE], 1, med)
-      mat[order(mat)]
       
-    }))
+      rmat_x <- rmat[idx,,drop=FALSE]
+      
+      #/ get the median of the ranks
+      mat <- apply(rmat_x, 1, med)
+      
+      #/ rank by the median
+      o <- order(mat)
+      
+      markers.df <- rmat_x[o,]
+      
+      return(markers.df)
+      
+    })
     
-    return(head(names(final), keep.n))
+    final <- do.call(rbind, final)
+    
+    final[!is.na(final)] <- 1
+    final[is.na(final)]  <- 0
+    final <- head(final, n=keep.n)
+    
+    return(final)
     
   },simplify = FALSE)
   
+  #/ if use_groups is set then only return genes that qualify as markers in all members of 
+  #/ use_groups with the same "off-target" pattern so if min.prop demands gene being a marker
+  #/ against all but one group then this "one" group must be the same for all elements of use_groups
   if(!is.null(use_groups)){
     
-    return(Reduce(intersect, s))
+    #/ strict intersect
+    isec <- Reduce(intersect, lapply(as.list(s), function(x) rownames(x)))
     
-  } else return(s)
+    if(length(isec)==0) {
+      message("No signature genes found!")
+      return(NULL)
+    }
+    
+    #/ get the genes
+    lp <- lapply(s, function(x) x[isec,])
+    cb <- combn(names(s), 2)
+    
+    lpx_check <- 
+    lapply(1:ncol(cb), function(x) {
+      
+      y <- cb[,x]
+      lpx <- lp[[y[1]]]==lp[[y[2]]]
+      
+      rownames(lpx[rowSums(lpx)==ncol(lpx),])
+      
+    })
+    
+    isec_x <- Reduce(intersect, lpx_check)
+    
+    to_return <- s[[1]][isec_x,]
+    
+  } else to_return <- s
+  
+  #/ either return the full table or just the names
+  if(!extended){
+    
+    if(class(to_return)[1]=="list"){
+      to_return <- sapply(to_return, function(x) rownames(x), simplify=FALSE)  
+    } else to_return <- rownames(to_return)
+    
+    
+  }
+  
+  return(to_return)
   
 }
 

@@ -1,5 +1,11 @@
 Log of changes between versions:
 
+v2.2.0:
+- added `extended` argument to output a full data.frame that indicates whether a gene qualified as a marker for the particular
+group against the other groups. Makes sense if min.prop < 1 to see which groups exactly the gene does not separate. Also some 
+fixes to use_groups, now if min.prop < 1 a gene must have the same "off-target" pattern to qualify as a marker for these combined groups.
+Some updates in the examples.
+
 v2.1.0: 
 - added exclude_groups to CreateGeneSignatures() to remove groups from the signature process
 

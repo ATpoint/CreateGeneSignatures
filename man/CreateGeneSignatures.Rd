@@ -10,7 +10,8 @@ CreateGeneSignatures(
   exclude_groups = NULL,
   delim = "_vs_",
   keep.n = Inf,
-  min.prop = 1
+  min.prop = 1,
+  extended = TRUE
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ so this group versus all others. See details.}
 \item{keep.n}{number of genes to keep per signature, by default all candidates are returned for manual posthoc filtering}
 
 \item{min.prop}{minimum proportion of comparisons per celltype that a gene must be included in. See details.}
+
+\item{extended}{logical, whether to output the signature genes as a data.frame that indicates whether the gene
+qualified as a marker against the other groups (1) or not (0)}
 }
 \description{
 Convert lists of ranked genes into celltype-specific signatures
@@ -47,8 +51,7 @@ as suggested in the examples section.
 In version 2.0.0 we introduced the \code{use_groups} argument. This allows to specify a group of celltypes and the function will then infer 
 markers for this group versus the rest. In the examplle aboves we use it to define CD4/CD8 markers. The advantage here is that these
 cells have many markers in common so by defining them as a group we only look for "pan"-T cell markers and that retains more genes
-that when treating both celltypes as independent groups. Of course one could fiddle the same behaviour by playing with min.prop,
-but the use_groups argument makes this convenient to use.
+that when treating both celltypes as independent groups.
 }
 \examples{
 # load RNA-seq data for CD4T-, CD8T and naive B cells from Haemopedia:
@@ -87,7 +90,7 @@ ranked <- RankDEGs(res)
 
 # Create signatures, keeping top 50 signature genes that separate the respective celltype
 # from all other celltypes:
-signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1)
+signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1, extended=FALSE)
 # check number of genes. for CD8T cells we found < 50 genes:
 lapply(signatures,length) 
 
@@ -112,13 +115,20 @@ pheatmap(mat=t(scale(t(logcpm[signatures$NveB,]))), show_rownames=FALSE)
 pheatmap(mat=t(scale(t(logcpm[signatures$NK,]))), show_rownames=FALSE)
          
 # or genes that separate the CD4T and CD8T cells from the rest
-signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"))
+signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"), extended=FALSE)
 logcpmZ2 <- t(scale(t(logcpm[signatures2,])))
 pheatmap(mat=logcpmZ2[,col_order],
-         show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
+         show_rownames=TRUE, cluster_rows=FALSE, cluster_cols=FALSE)
          
-# find signatures but exclude the CD4T group        
-signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"))
+# find signatures for each group but exclude the CD4T categorically
+signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"), extended=FALSE)
+
+# Find all markers for each group against all but one group and output the extended table
+# to easily see which group the gene does not qualify as a marker for.
+# Here, the genes in the below tail command are markers for CD4T against NK and NveB but do not separate CD4T from CD8T.
+signatures4 <- CreateGeneSignatures(ranked=ranked, min.prop=2/3, extended=TRUE)
+tail(signatures4$CD4T)
+
 
 }
 \author{

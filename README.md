@@ -14,10 +14,13 @@ based on these lists of ranked genes.
 
 ```{r}
 
-# Low the raw counts:
-counts <- readRDS(paste0(system.file("extdata",package="CreateGeneSignatures"), "/haemopedia_subset.rds"))
+# load RNA-seq data for CD4T-, CD8T and naive B cells from Haemopedia:
+counts <- readRDS(paste0(
+            system.file("extdata",package="CreateGeneSignatures"),
+            "/haemopedia_subset.rds"))
 
 # Use edgeR to perform all pairwise comparisons
+
 library(edgeR)
 y <- DGEList(counts=counts,group=gsub("\\..", "", colnames(counts)))
 design <- model.matrix(~0+group,y$samples)
@@ -27,7 +30,7 @@ y <- calcNormFactors(y)
 y <- estimateDisp(y,design)
 fit <- glmQLFit(y,design)
 
-# define all unique pairwise contrasts:
+# all unique pairwise contrasts:
 contrasts <- makeContrasts(CD4T_vs_CD8T  = CD4T-CD8T,
                            CD4T_vs_NK    = CD4T-NK,
                            CD4T_vs_NveB  = CD4T-NveB,
@@ -36,42 +39,35 @@ contrasts <- makeContrasts(CD4T_vs_CD8T  = CD4T-CD8T,
                            NK_vs_NveB    = NK-NveB,
                            levels = design)
                            
-# test every contrast against a fold change of 1.5 with glmTreat:
+# test using glmTreat against a minumum fold change of ~1.5                          
 res <- sapply(colnames(contrasts), function(con){
-
-  tt <- topTags(glmTreat(fit, contrast=contrasts[,con], lfc=log2(1.5)), n=Inf)$table
-  return(data.frame(Gene=rownames(tt), tt))
-
+  tt<-topTags(glmTreat(fit,contrast=contrasts[,con],lfc=log2(1.5)),n=Inf)$table
+return(data.frame(Gene=rownames(tt), tt))
 }, simplify = FALSE)
 
 # Rank the DEGs:
 ranked <- RankDEGs(res)
 
-# Create signatures, keeping the top-50 genes per celltype:
-signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1)
-
-# As can be seen the CD8T cells only have 33 signature genes with the chosen parameters:
+# Create signatures, keeping top 50 signature genes that separate the respective celltype
+# from all other celltypes:
+signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1, extended=FALSE)
+# check number of genes. for CD8T cells we found < 50 genes:
 lapply(signatures,length) 
 
-# Inspect the signature genes using heatmaps, using the scaled CPMs on the log scale:
+
+# Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes
 library(pheatmap)
 logcpm <- log2(edgeR::cpm(y,log=FALSE)+1)
 
-# plot a heatmap in the colorder of names(signatures)
-col_order <- unlist(lapply(names(signatures), 
+# plot a heatmap in the order of names(signatures)
+col_order <- unlist(lapply(names(ranked), 
                            function(x) grep(paste0("^", x), colnames(logcpm))))
-                            
+                           
 # use scaled logCPMs                           
 logcpmZ <- t(scale(t(logcpm[unique(unlist(signatures)),])))
 pheatmap(mat=logcpmZ[,col_order],
          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
-
-# Alternatively check every signature separately:
-pheatmap(mat=t(scale(t(logcpm[signatures$CD4T,]))), show_rownames=FALSE)
-pheatmap(mat=t(scale(t(logcpm[signatures$CD8T,]))), show_rownames=FALSE)
-pheatmap(mat=t(scale(t(logcpm[signatures$NveB,]))), show_rownames=FALSE)
-pheatmap(mat=t(scale(t(logcpm[signatures$NK,]))), show_rownames=FALSE)
-
+         
 ```
 
 A heatmap of the combined signatures genes:

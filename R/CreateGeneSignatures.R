@@ -133,7 +133,7 @@ CreateGeneSignatures <- function(ranked,
   }
   
   if(is.null(names(ranked))) stop("ranked has no names")
-  if(!min.prop <= 1 & min.prop > 0) stop("min.prop must be between > 0 and <= 1")
+  if(min.prop > 1 | min.prop < 0) stop("min.prop must be between > 0 and <= 1")
   
   #/ optionally remove exclude_groups from ranked
   if(!is.null(exclude_groups)){
@@ -173,6 +173,8 @@ CreateGeneSignatures <- function(ranked,
     isna <- !is.na(rmat)
     from <- ncol(rmat)
     to   <- floor(min.prop*from)
+    to <- if(to==0) 1 else to
+    
     med  <- function(y) median(y,na.rm=TRUE)
     
     #/ take the rankmatrix (so each entry is the rank of the gene in the individual ranking),
@@ -190,7 +192,7 @@ CreateGeneSignatures <- function(ranked,
       #/ rank by the median
       o <- order(mat)
       
-      markers.df <- rmat_x[o,]
+      markers.df <- data.frame(rmat_x[o,,drop=FALSE], check.names=FALSE)
       
       return(markers.df)
       
@@ -209,7 +211,7 @@ CreateGeneSignatures <- function(ranked,
   #/ if use_groups is set then only return genes that qualify as markers in all members of 
   #/ use_groups with the same "off-target" pattern so if min.prop demands gene being a marker
   #/ against all but one group then this "one" group must be the same for all elements of use_groups
-  if(!is.null(use_groups)){
+  if(!is.null(use_groups) & length(use_groups)>1 & min.prop < 1){
     
     #/ strict intersect
     isec <- Reduce(intersect, lapply(as.list(s), function(x) rownames(x)))
@@ -220,24 +222,31 @@ CreateGeneSignatures <- function(ranked,
     }
     
     #/ get the genes
-    lp <- lapply(s, function(x) x[isec,])
+    lp <- sapply(s, function(x) x[isec,], simplify=FALSE)
     cb <- combn(names(s), 2)
     
     lpx_check <- 
-    lapply(1:ncol(cb), function(x) {
-      
-      y <- cb[,x]
-      lpx <- lp[[y[1]]]==lp[[y[2]]]
-      
-      rownames(lpx[rowSums(lpx)==ncol(lpx),])
-      
-    })
+      lapply(1:ncol(cb), function(x) {
+        
+        y <- cb[,x]
+        lpx <- lp[[y[1]]]==lp[[y[2]]]
+        
+        rownames(lpx[rowSums(lpx)==ncol(lpx),])
+        
+      })
     
     isec_x <- Reduce(intersect, lpx_check)
     
     to_return <- s[[1]][isec_x,]
     
   } else to_return <- s
+  
+  if(!is.null(use_groups) & min.prop==1 & length(use_groups)>0){
+    
+    j <- Reduce(intersect, lapply(to_return, rownames))
+    to_return <- to_return[[1]][j,]
+    
+  }
   
   #/ either return the full table or just the names
   if(!extended){
@@ -248,6 +257,8 @@ CreateGeneSignatures <- function(ranked,
     
     
   }
+  
+  to_return <- if(length(to_return)==1) to_return[[1]] else to_return
   
   return(to_return)
   

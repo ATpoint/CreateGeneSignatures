@@ -1,5 +1,8 @@
 Log of changes between versions:
 
+v2.2.1:
+- fixing bugs and edge cases, robustified
+
 v2.2.0:
 - added `extended` argument to output a full data.frame that indicates whether a gene qualified as a marker for the particular
 group against the other groups. Makes sense if min.prop < 1 to see which groups exactly the gene does not separate. Also some 

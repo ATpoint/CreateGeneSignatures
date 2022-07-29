@@ -1,6 +1,5 @@
-install.packages("remotes", repos="https://cloud.r-project.org", verbose=FALSE)
-remotes::install_github("atpoint/CreateGeneSignatures")
-library(CreateGeneSignatures)
+source("R/RankDEGs.R")
+source("CreateGeneSignatures.R")
 
 res <- readRDS("inst/extdata/res.rds")
 

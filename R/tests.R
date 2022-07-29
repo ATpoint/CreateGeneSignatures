@@ -1,5 +1,5 @@
 source("R/RankDEGs.R")
-source("CreateGeneSignatures.R")
+source("R/CreateGeneSignatures.R")
 
 res <- readRDS("inst/extdata/res.rds")
 

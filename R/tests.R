@@ -3,8 +3,11 @@ run_test <- if(is.na(args[1])) FALSE else as.logical(args[1])
 
 if(run_test){
   
-  if(!requireNamespace(c("edgeR", "pheatmap")))
+  if(!requireNamespace(c("edgeR", "pheatmap"))){
+    install.packages("BiocManager")
     BiocManager::install("edgeR", "pheatmap")
+  }
+    
   
   library(edgeR)
   library(pheatmap)

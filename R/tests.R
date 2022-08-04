@@ -5,10 +5,9 @@ if(run_test){
   
   if(!requireNamespace(c("edgeR", "pheatmap"))){
     install.packages("BiocManager")
-    BiocManager::install("edgeR", "pheatmap")
+    BiocManager::install(c("edgeR", "pheatmap"))
   }
     
-  
   library(edgeR)
   library(pheatmap)
 

@@ -3,24 +3,22 @@
 name: CI
 
 on:
-  # trigger on push
   push:
-    # to all branches
+
     branches:
       - '**'
-    # ignore LICENSE, all .ignore and markdown files
+
     paths-ignore:
       - '*.md'
       - '*.ignore'
       - LICENSE
+
   pull_request:
     branches:
       - '**'
 
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   
   #=======================================================================================================
@@ -36,4 +34,14 @@ jobs:
       - name: Rtest
         run: |
           Rscript --vanilla R/tests.R
+      - name: Commit plot
+        run: |
+          git config --global user.name 'atpoint'
+          git config --global user.email 'atpoint@users.noreply.github.com'
+          mkdir -p misc && mv heatmap.png misc/heatmap.png
+          git add misc/heatmap.png
+          git commit -am "commit plot from ci test"
+          git push    
+
+
 

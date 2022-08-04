@@ -3,7 +3,7 @@ run_test <- if(is.na(args[1])) FALSE else as.logical(args[1])
 
 if(run_test){
   
-  if(!requireNamespace(c("edgeR", "pheatmap"))){
+  if(sum(c("edgeR", "pheatmap") %in% rownames(installed.packages())) < 2){
     install.packages("BiocManager")
     BiocManager::install(c("edgeR", "pheatmap"))
   }

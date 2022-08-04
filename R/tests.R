@@ -31,11 +31,7 @@ if(run_test){
   #/ test 4: with extended
   signatures4 <- CreateGeneSignatures(ranked=ranked, min.prop=2/3, extended=TRUE)
 
-  
-  
-  counts <- readRDS(paste0(
-    system.file("extdata",package="CreateGeneSignatures"),
-    "/haemopedia_subset.rds"))
+  counts <- readRDS("inst/extdata/haemopedia_subset.rds")
   
   y <- DGEList(counts=counts,group=gsub("\\..", "", colnames(counts)))
   

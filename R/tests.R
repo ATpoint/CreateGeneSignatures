@@ -4,7 +4,7 @@ run_test <- if(is.na(args[1])) FALSE else as.logical(args[1])
 if(run_test){
   
   if(sum(c("edgeR", "pheatmap") %in% rownames(installed.packages())) < 2){
-    install.packages("BiocManager")
+    install.packages("BiocManager", repos="https://cloud.r-project.org/")
     BiocManager::install(c("edgeR", "pheatmap"))
   }
     

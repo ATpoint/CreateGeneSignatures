@@ -1,28 +1,35 @@
-source("R/RankDEGs.R")
-source("R/CreateGeneSignatures.R")
+args <- commandArgs(trailingOnly=TRUE)
+run_test <- if(is.na(args[1])) FALSE else as.logical(args[1])
 
-res <- readRDS("inst/extdata/res.rds")
-
-#/ rank DEGs
-ranked <- RankDEGs(res)
-
-#/ test1: standard use
-signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1, extended=FALSE)
-
-#/ test2: pool groups
-signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"), extended=FALSE)
-
-#/ test3: exclude groups
-signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"), extended=FALSE)
-
-#/ test 4: with extended
-signatures4 <- CreateGeneSignatures(ranked=ranked, min.prop=2/3, extended=TRUE)
-
-run_test <- TRUE
 if(run_test){
+  
+  if(!requireNamespace(c("edgeR", "pheatmap")))
+    BiocManager::install("edgeR", "pheatmap")
   
   library(edgeR)
   library(pheatmap)
+
+  source("R/RankDEGs.R")
+  source("R/CreateGeneSignatures.R")
+  
+  res <- readRDS("inst/extdata/res.rds")
+  
+  #/ rank DEGs
+  ranked <- RankDEGs(res)
+  
+  #/ test1: standard use
+  signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1, extended=FALSE)
+  
+  #/ test2: pool groups
+  signatures2 <- CreateGeneSignatures(ranked=ranked, use_groups=c("CD4T", "CD8T"), extended=FALSE)
+  
+  #/ test3: exclude groups
+  signatures3 <- CreateGeneSignatures(ranked=ranked, exclude_groups=c("CD4T"), extended=FALSE)
+  
+  #/ test 4: with extended
+  signatures4 <- CreateGeneSignatures(ranked=ranked, min.prop=2/3, extended=TRUE)
+
+  
   
   counts <- readRDS(paste0(
     system.file("extdata",package="CreateGeneSignatures"),

@@ -39,9 +39,9 @@ jobs:
           git config --global user.name 'atpoint'
           git config --global user.email 'atpoint@users.noreply.github.com'
           mkdir -p misc && mv heatmap.png misc/heatmap.png
-          git add misc/heatmap.png
-          git commit -am "commit plot from ci test"
-          git push    
-
-
-
+          git_check=$(git diff --exit-code misc/heatmap.png > /dev/null && echo "NOTHING" || echo "LETSGO")
+          if [[ $git_check == "LETSGO" ]]; then
+            git add misc/heatmap.png
+            git commit -am "update heatmap"
+            git push          
+          fi    

@@ -6,7 +6,7 @@
 
 This package creates per-group marker signatures from pairwise differential expression (DE) results. For this it expects a list of DE result tables (data.frames) for all possible pairwise combinations of groups. For example, for three groups A, B and C that would be A-B, A-C and B-C. It first subsets these DE results to "significant" genes based on user-defined cutoffs, for example based on FDR and logFC. It then ranks these DE results by a user-defined metric, such as `-log10(pvalue)` and then aggregates the results into ranked list of markers per group, see `?RankDEGs`. Based on these lists the `CreateGeneSignatures()` function then filters for genes that are DE in a given groups versus a proportion (`min.prop`) of other groups, for example 1 means all groups, and 0.75 means 75% of other groups. The ranking of the per-group markers is based on the chosen ranking metric. Gene rank highly if they consistently ranked highly in the individual DE tables.
 
-The aim of this package is simplicity and understandable "non-blackbox" behaviour. Therefore, the marker criteria are simply "a gene must be DE with cutoffs (...) and for a given group this must be tre against (all, half, 3/4, ...) other groups.
+The aim of this package is simplicity and understandable "non-blackbox" behaviour. Therefore, the marker criteria are simply "a gene must be DE with cutoffs (...) and for a given group this must be true versus (all, half, 3/4, min.prop) of other groups.
 
 ## Example workflow:
 

@@ -2,28 +2,26 @@
 
 ![CI](https://github.com/ATpoint/CreateGeneSignatures/actions/workflows/ci.yml/badge.svg)
 
-This package implements a simple filtering strategy to obtain celltype-specific gene signatures 
-from RNA-seq (both bulk or single-cell) differential expression results.
+## Introduction
+
+This package creates per-group marker signatures from pairwise differential expression (DE) results. For this it expects a list of DE result tables (data.frames) for all possible pairwise combinations of groups. For example, for three groups A, B and C that would be A-B, A-C and B-C. It first subsets these DE results to "significant" genes based on user-defined cutoffs, for example based on FDR and logFC. It then ranks these DE results by a user-defined metric, such as `-log10(pvalue)` and then aggregates the results into ranked list of markers per group, see `?RankDEGs`. Based on these lists the `CreateGeneSignatures()` function then filters for genes that are DE in a given groups versus a proportion (`min.prop`) of other groups, for example 1 means all groups, and 0.75 means 75% of other groups. The ranking of the per-group markers is based on the chosen ranking metric. Gene rank highly if they consistently ranked highly in the individual DE tables.
+
+The aim of this package is simplicity and understandable "non-blackbox" behaviour. Therefore, the marker criteria are simply "a gene must be DE with cutoffs (...) and for a given group this must be tre against (all, half, 3/4, ...) other groups.
 
 ## Example workflow:
-For this example we assume that the package is installed as described below.
-We use RNA-seq from [Haemopedia](https://www.haemosphere.org/datasets/show), in this case four lymphoid celltypes from `Haemopedia-Human-RNASeq` dataset,
-which are included in the package example data. We first perform differential analysis with `edgeR` and then create a signature for every of the four celltypes,
-namely CD4 T cells, CD8 T cells, naive B cells and natural killer (NK) cells.
 
-We first perform differential analysis between all celltypes, then rank the genes for every comparison based on significance, and then derive signatures
-based on these lists of ranked genes.
+The example workflow uses RNA-seq data from Haemopedia. It first perform differential analysis with `edgeR`,
+then filters the DE results for significant genes, ranks the DEGs and then create a signature for every of the four celltypes, namely CD4-T cells, CD8-T cells, naive B cells and natural killer (NK) cells.
 
 ```{r}
-
 # load RNA-seq data for CD4T-, CD8T and naive B cells from Haemopedia:
 counts <- readRDS(paste0(
-            system.file("extdata",package="CreateGeneSignatures"),
-            "/haemopedia_subset.rds"))
+  system.file("extdata",package="CreateGeneSignatures"),
+  "/haemopedia_subset.rds"))
 
 # Use edgeR to perform all pairwise comparisons
-
 library(edgeR)
+
 y <- DGEList(counts=counts,group=gsub("\\..", "", colnames(counts)))
 design <- model.matrix(~0+group,y$samples)
 colnames(design) <- gsub("group", "", colnames(design))
@@ -40,66 +38,46 @@ contrasts <- makeContrasts(CD4T_vs_CD8T  = CD4T-CD8T,
                            CD8T_vs_NveB  = CD8T-NveB,
                            NK_vs_NveB    = NK-NveB,
                            levels = design)
-                           
-# test using glmTreat against a minumum fold change of ~1.5                          
+
+# test using glmTreat                        
 res <- sapply(colnames(contrasts), function(con){
-  tt<-topTags(glmTreat(fit,contrast=contrasts[,con],lfc=log2(1.5)),n=Inf)$table
-return(data.frame(Gene=rownames(tt), tt))
+  tt<-topTags(glmTreat(fit,contrast=contrasts[,con], log2(1.5)),n=Inf)$table
+  return(data.frame(Gene=rownames(tt), tt))
 }, simplify = FALSE)
 
 # Rank the DEGs:
-ranked <- RankDEGs(res)
+ranked <- RankDEGs(res, delim="_vs_", signif.column="FDR", signif.threshold=0.05,
+                   effect.column="logFC", effect.threshold=0, gene.column="Gene",
+                   rnk.column="PValue", rnk.method="increasing")
 
-# Create signatures, keeping top 50 signature genes that separate the respective celltype
-# from all other celltypes:
+# Create signatures, keeping top 50 signature genes that separate the respective celltype from all other celltypes:
 signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1)
+
 # check number of genes. for CD8T cells we found < 50 genes:
 lengths(signatures)
-
 
 # Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes
 library(pheatmap)
 logcpm <- log2(edgeR::cpm(y,log=FALSE)+1)
 
 # plot a heatmap in the order of names(signatures)
-col_order <- unlist(lapply(names(ranked), 
-                           function(x) grep(paste0("^", x), colnames(logcpm))))
-                           
+col_order <- unlist(lapply(names(ranked), function(x) grep(paste0("^", x), colnames(logcpm))))
+
 # use scaled logCPMs                           
 logcpmZ <- t(scale(t(logcpm[unique(unlist(signatures)),])))
 pheatmap(mat=logcpmZ[,col_order],
-         show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)
-         
+         show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)     
 ```
 
 A heatmap of the combined signatures genes:
 
 ![heatmap](misc/heatmap.png)
 
-The signatures represent those combination of genes that best separate each of the individual celltypes from all other celltypes. 
-In the above example the parameters were very strict, with `min.prop=1` requiring that signature genes ranked highly in every of the initial pairwise conparisons.
-This might make sense if celltypes are very different from each otherand one aims to derive a conservative set of marker genes.
-
-In cases where celltypes are less separated (above example represents terminally-differentiated cells), e.g. celltypes that are closely related in
-a developmental continuum such as multipotent stem/progenitor populations, such stringent settings might lead to few or no signature genes at all.
-In this case lowering the `min.prop` parameter is necessary. As discussed above a signature aims to separate celltypes based on the combination or genes rather
-than requiring every single genes to be strictly upregulated in a given celltype versus all other celltypes.
-
-The user is therefore encouraged to try different settings, checking how many genes per celltype can be obtained with the given setting followed by inspection of the separation between celltypes using heatmaps.
-
-## Why ranks?
-There are multiple strategies to transform differential expression results into gene signatures. 
-Given that differential analysis is the first step in this workflow one might be tempted to simply combine the obtained p-values into a single value, e.g.
-using Fisher's method, in order to select genes based on that value. The problem with p-values is that they, beside the effect size, are also a function of statistical power, influenced by e.g. the expression level of a gene and its length. Also the number of samples per group play a notalbe role. 
-A gene with identical expression level and effect size measured in a 10 vs 10 sample comparison will result in lower p-values compared to a 3 vs 3 sample comparison. This becomes an even greater problem when dealing with single-cell data if doing single-cell level DE testing, e.g. comparing clusters with 20 and 200 cells versus clusters with 500 and 2000 cells. We therefore chose to only use the DE statistics to rank the differential genes per comparison and then use these ranks for the downstream analysis. This avoids directly comparing p-values between groups with differences in statistical power. The same problem holds true when comparing effect sizes rather than p-values as effect sizes are unreliable in case of low replicate numbers and/or the presence of low counts.
+In the above example the parameters were most strict, with `min.prop=1` requiring that signature genes were DE in all comparisons. Alternatively, if this returns no, or too few genes one might relax this cutoff, for example `min.prop=0.75`, which requires that a gene is DE in at least 75% of comparisons. 
 
 ## Installation
 
 ```r
-
-# The package is fully base R with no dependencies.
-
 install.packages("remotes")
 remotes::install_github("ATpoint/CreateGeneSignatures")
-
 ```

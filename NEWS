@@ -1,5 +1,8 @@
 Log of changes between versions:
 
+v2.2.3:
+- minor changes in docs and change default of `CreateGeneSignatures` argument `extended` to `FALSE`.
+
 v2.2.2:
 - minor changes in DESCRIPTION and render plots via GitHub Actions
 - extend test.R script to render the plot in README.md and update via Actions

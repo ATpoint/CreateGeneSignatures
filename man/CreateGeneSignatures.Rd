@@ -11,7 +11,7 @@ CreateGeneSignatures(
   delim = "_vs_",
   keep.n = Inf,
   min.prop = 1,
-  extended = TRUE
+  extended = FALSE
 )
 }
 \arguments{
@@ -90,9 +90,9 @@ ranked <- RankDEGs(res)
 
 # Create signatures, keeping top 50 signature genes that separate the respective celltype
 # from all other celltypes:
-signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1, extended=FALSE)
+signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50)
 # check number of genes. for CD8T cells we found < 50 genes:
-lapply(signatures,length) 
+lengths(signatures)
 
 
 # Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes

@@ -2,8 +2,8 @@
 
 ![CI](https://github.com/ATpoint/CreateGeneSignatures/actions/workflows/ci.yml/badge.svg)
 
-This package implements a simple yet effective rank-based strategy to produce 
-celltype-specific gene signatures based on RNA-seq differential expression results.
+This package implements a simple filtering strategy to obtain celltype-specific gene signatures 
+from RNA-seq (both bulk or single-cell) differential expression results.
 
 ## Example workflow:
 For this example we assume that the package is installed as described below.
@@ -52,9 +52,9 @@ ranked <- RankDEGs(res)
 
 # Create signatures, keeping top 50 signature genes that separate the respective celltype
 # from all other celltypes:
-signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1, extended=FALSE)
+signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1)
 # check number of genes. for CD8T cells we found < 50 genes:
-lapply(signatures,length) 
+lengths(signatures)
 
 
 # Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes
@@ -75,7 +75,6 @@ pheatmap(mat=logcpmZ[,col_order],
 A heatmap of the combined signatures genes:
 
 ![heatmap](misc/heatmap.png)
-
 
 The signatures represent those combination of genes that best separate each of the individual celltypes from all other celltypes. 
 In the above example the parameters were very strict, with `min.prop=1` requiring that signature genes ranked highly in every of the initial pairwise conparisons.

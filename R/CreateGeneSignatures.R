@@ -55,7 +55,6 @@
 #' # check number of genes. for CD8T cells we found < 50 genes:
 #' lengths(signatures)
 #' 
-#' 
 #' # Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes
 #' library(pheatmap)
 #' logcpm <- log2(edgeR::cpm(y,log=FALSE)+1)
@@ -90,7 +89,6 @@
 #' signatures4 <- CreateGeneSignatures(ranked=ranked, min.prop=2/3, extended=TRUE)
 #' tail(signatures4$CD4T)
 #' 
-#' 
 #' @details 
 #' The function takes as input a nested list that, for every celltype, contains the ranked genes from pairwise comparisons against every other
 #' celltype in this analysis, see also the \code{RankDEGs} function of this package. For every celltype first a rank matrix is created that
@@ -102,11 +100,10 @@
 #' If \code{min.prop=2/3} is chosen then signature genes must rank high in at least two out of three comparisons. The higher this value between (between zero and one)
 #' the more stringent the filtering. If celltypes are decently separated it might be trivial to find large numbers of signature genes even with min.prop of 1.
 #' In cases where cells are very similar to each other, e.g. cells being close in a developmental continuum, one will need to lower this threshold in order to get some
-#' (or any) signature genes. The user is encouraged to try different values and check the set of marker genes using heatmaps to inspect the spearation between celltypes
-#' as suggested in the examples section. 
+#' (or any) signature genes. 
 #' 
-#' In version 2.0.0 we introduced the \code{use_groups} argument. This allows to specify a group of celltypes and the function will then infer 
-#' markers for this group versus the rest. In the examplle aboves we use it to define CD4/CD8 markers. The advantage here is that these
+#' The \code{use_groups} argument allows to specify a group of celltypes and the function will then infer 
+#' markers for this combined group versus the rest. In the example above we use it to define combined CD4/CD8 markers. The advantage here is that these
 #' cells have many markers in common so by defining them as a group we only look for "pan"-T cell markers and that retains more genes
 #' that when treating both celltypes as independent groups. 
 #' 

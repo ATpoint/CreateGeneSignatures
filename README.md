@@ -19,7 +19,7 @@ counts <- readRDS(paste0(
   system.file("extdata",package="CreateGeneSignatures"),
   "/haemopedia_subset.rds"))
 
-# Use edgeR to perform all pairwise comparisons
+# Use edgeR to perform all pairwise comparisons:
 library(edgeR)
 
 y <- DGEList(counts=counts,group=gsub("\\..", "", colnames(counts)))
@@ -39,7 +39,7 @@ contrasts <- makeContrasts(CD4T_vs_CD8T  = CD4T-CD8T,
                            NK_vs_NveB    = NK-NveB,
                            levels = design)
 
-# test using glmTreat                        
+# Get DEGs, testing against a fold change:                  
 res <- sapply(colnames(contrasts), function(con){
   tt<-topTags(glmTreat(fit,contrast=contrasts[,con], log2(1.5)),n=Inf)$table
   return(data.frame(Gene=rownames(tt), tt))
@@ -56,14 +56,14 @@ signatures <- CreateGeneSignatures(ranked=ranked, keep.n=50, min.prop=1)
 # check number of genes. for CD8T cells we found < 50 genes:
 lengths(signatures)
 
-# Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes
+# Inspect signatures using heatmaps plotting the scaled logcpms of the signature genes:
 library(pheatmap)
 logcpm <- log2(edgeR::cpm(y,log=FALSE)+1)
 
-# plot a heatmap in the order of names(signatures)
+# plot a heatmap ordered by groups:
 col_order <- unlist(lapply(names(ranked), function(x) grep(paste0("^", x), colnames(logcpm))))
 
-# use scaled logCPMs                           
+# use scaled logCPMs:                     
 logcpmZ <- t(scale(t(logcpm[unique(unlist(signatures)),])))
 pheatmap(mat=logcpmZ[,col_order],
          show_rownames=FALSE, cluster_rows=FALSE, cluster_cols=FALSE)     
